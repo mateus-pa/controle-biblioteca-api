@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { StatusEmprestimo } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service";
-import CreateEmprestimosDto from "./dtos/create-emprestimos";
+import CreateEmprestimosDto from "./dtos/create-emprestimos.dto";
 
 @Injectable()
 export class EmprestimosService {
