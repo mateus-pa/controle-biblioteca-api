@@ -70,4 +70,67 @@ export class EmprestimosService {
 			});
 		});
 	}
+
+	async listarEmprestimos(usuarioId: string, role: string) {
+		const filtroUsuario: any = {};
+
+		if (role !== "ADMIN") {
+			filtroUsuario.usuarioId = usuarioId;
+		}
+
+		return this.prisma.emprestimo.findMany({
+			where: filtroUsuario,
+			select: {
+				id: true,
+				dataEmprestimo: true,
+				dataLimite: true,
+				status: true,
+				livro: {
+					select: {
+						id: true,
+						titulo: true,
+					},
+				},
+				usuario: {
+					select: {
+						id: true,
+						nome: true,
+					},
+				},
+			},
+			orderBy: {
+				dataEmprestimo: "desc",
+			},
+		});
+	}
+
+	async devolverLivro(id: string) {
+		const emprestimo = await this.prisma.emprestimo.findUnique({
+			where: { id },
+		});
+
+		if (!emprestimo) {
+			throw new NotFoundException("Empréstimo não encontrado.");
+		}
+
+		if (emprestimo.status === StatusEmprestimo.DEVOLVIDO) {
+			throw new BadRequestException("Este empréstimo já foi encerrado.");
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			await tx.livro.update({
+				where: { id: emprestimo.livroId },
+				data: { disponivel: true },
+			});
+
+			return tx.emprestimo.update({
+				where: { id },
+				data: { status: StatusEmprestimo.DEVOLVIDO },
+				select: {
+					id: true,
+					status: true,
+				},
+			});
+		});
+	}
 }
