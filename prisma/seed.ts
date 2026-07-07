@@ -3,15 +3,12 @@ import { Role } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 
 async function main() {
-	// 1. Limpar dados antigos (opcional, para evitar conflitos de dados únicos como Email e ISBN)
 	await prisma.emprestimo.deleteMany();
 	await prisma.livro.deleteMany();
 	await prisma.usuario.deleteMany();
 
-	// 2. Gerar hash de senha padrão para os usuários de teste (ex: "senha123")
 	const senhaHash = await bcrypt.hash("senha123", 10);
 
-	// 3. Criar Usuários de Teste
 	const admin = await prisma.usuario.create({
 		data: {
 			nome: "Carlos Admin",
@@ -30,7 +27,6 @@ async function main() {
 		},
 	});
 
-	// 4. Criar Livros de Teste
 	await prisma.livro.createMany({
 		data: [
 			{
