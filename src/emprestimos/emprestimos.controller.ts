@@ -37,6 +37,12 @@ export class EmprestimosController {
 		return this.emprestimosService.listarEmprestimos(user.id, user.role);
 	}
 
+	@Get("atrasados")
+	@Roles("ADMIN")
+	async listarAtrasados() {
+		return this.emprestimosService.listarAtrasados();
+	}
+
 	@Patch(":id/devolucao")
 	@Roles("ADMIN")
 	async devolverLivro(

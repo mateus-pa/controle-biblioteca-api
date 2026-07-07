@@ -104,6 +104,40 @@ export class EmprestimosService {
 		});
 	}
 
+	async listarAtrasados() {
+		const agora = new Date();
+
+		return this.prisma.emprestimo.findMany({
+			where: {
+				dataLimite: {
+					lt: agora,
+				},
+				dataDevolucao: null,
+			},
+			select: {
+				id: true,
+				dataEmprestimo: true,
+				dataLimite: true,
+				status: true,
+				livro: {
+					select: {
+						id: true,
+						titulo: true,
+					},
+				},
+				usuario: {
+					select: {
+						id: true,
+						nome: true,
+					},
+				},
+			},
+			orderBy: {
+				dataLimite: "asc",
+			},
+		});
+	}
+
 	async devolverLivro(id: string) {
 		const emprestimo = await this.prisma.emprestimo.findUnique({
 			where: { id },
@@ -113,8 +147,19 @@ export class EmprestimosService {
 			throw new NotFoundException("Empréstimo não encontrado.");
 		}
 
-		if (emprestimo.status === StatusEmprestimo.DEVOLVIDO) {
+		if (
+			emprestimo.status === StatusEmprestimo.DEVOLVIDO ||
+			emprestimo.status === StatusEmprestimo.ATRASADO
+		) {
 			throw new BadRequestException("Este empréstimo já foi encerrado.");
+		}
+
+		const dataDevolucao = new Date();
+
+		let statusFinal: StatusEmprestimo = StatusEmprestimo.DEVOLVIDO;
+
+		if (dataDevolucao > emprestimo.dataLimite) {
+			statusFinal = StatusEmprestimo.ATRASADO;
 		}
 
 		return this.prisma.$transaction(async (tx) => {
@@ -125,10 +170,14 @@ export class EmprestimosService {
 
 			return tx.emprestimo.update({
 				where: { id },
-				data: { status: StatusEmprestimo.DEVOLVIDO },
+				data: {
+					status: statusFinal,
+					dataDevolucao,
+				},
 				select: {
 					id: true,
 					status: true,
+					dataDevolucao: true,
 				},
 			});
 		});
