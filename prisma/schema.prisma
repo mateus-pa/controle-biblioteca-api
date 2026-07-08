@@ -45,6 +45,7 @@ model Livro {
   atualizadoEm DateTime     @updatedAt
   emprestimos  Emprestimo[]
 
+  @@index([disponivel])
   @@map("livros")
 }
 
